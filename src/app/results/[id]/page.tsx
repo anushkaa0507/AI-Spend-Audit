@@ -2,9 +2,15 @@ import LeadCapture from "@/src/components/UI/LeadCapture";
 import AuditResults from "@/src/components/UI/AuditResults";
 import Navbar from "@/src/components/UI/Navbar";
 async function getAudit(id: string) {
-  const response = await fetch(`http://localhost:3000/api/results/${id}`, {
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL;
+
+const response = await fetch(
+  `${baseUrl}/api/results/${id}`,
+  {
     cache: "no-store",
-  });
+  }
+);
   return response.json();
 }
 export default async function ResultsPage({
