@@ -1,42 +1,88 @@
-import { supabase }
-from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
-import { v4 as uuid }
-from "uuid";
+import { resend } from "@/lib/resend";
 
 export async function POST(
-  req: Request
+  request: Request
 ) {
 
   try {
 
     const body =
-      await req.json();
+      await request.json();
 
-    await supabase
-      .from("leads")
-      .insert({
-        id: uuid(),
-        audit_id:
-          body.auditId,
-        email:
-          body.email,
-        company:
-          body.company,
-        role:
-          body.role,
-        team_size:
-          body.teamSize,
+    const {
+      auditId,
+      email,
+      company,
+      role,
+      teamSize,
+    } = body;
+
+    const { error } =
+      await supabase
+
+        .from("leads")
+
+        .insert([
+          {
+            audit_id: auditId,
+            email,
+            company,
+            role,
+            team_size: teamSize,
+          },
+        ]);
+
+    if (error) {
+
+      return Response.json({
+        success: false,
+        error,
       });
+    }
+
+    await resend.emails.send({
+
+      from:
+        "onboarding@resend.dev",
+
+      to: email,
+
+      subject:
+        "Your AI Spend Audit",
+
+      html: `
+
+        <h1>
+          Audit Received
+        </h1>
+
+        <p>
+          Thanks for using
+          AI Spend Audit.
+        </p>
+
+        <p>
+          Credex will reach out
+          if major savings
+          opportunities exist.
+        </p>
+
+      `,
+    });
 
     return Response.json({
       success: true,
     });
 
-  } catch {
+  } catch (error) {
+
+    console.log(error);
 
     return Response.json({
       success: false,
+      error,
     });
   }
 }

@@ -1,34 +1,32 @@
-import type { Metadata } from "next";
 import "./globals.css";
-import type { ReactNode } from "react";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "StackAudit — AI Spend Audit",
+
+  title: "AI Spend Audit",
+
   description:
-    "Free 60-second audit of your AI tool spend. Find out where you're overpaying and how much you could save.",
-  openGraph: {
-    title: "StackAudit — AI Spend Audit",
-    description:
-      "Find out if you're overpaying for AI tools. Free. No signup required.",
-    type: "website",
-    siteName: "StackAudit",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "StackAudit — AI Spend Audit",
-    description:
-      "Find out if you're overpaying for AI tools. Free. No signup required.",
-  },
+    "Audit your AI tool spending and discover savings instantly.",
+
 };
 
 export default function RootLayout({
   children,
-}: {
-  children: ReactNode;
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+
   return (
+
     <html lang="en">
-      <body>{children}</body>
+
+      <body>
+
+        {children}
+
+      </body>
+
     </html>
   );
 }
