@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const summary = await generateSummary(audit);
     const id = uuid();
 
-    await supabase.from("audits").insert({
+    const { error } = await supabase.from("audits").insert({
       id,
       tools: body.tools,
       team_size: body.teamSize,
@@ -62,12 +62,14 @@ export async function POST(req: NextRequest) {
       total_annual_savings: audit.totalAnnualSavings,
     });
 
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return NextResponse.json({ success: false, error: "Failed to save audit" }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true, id, audit, summary });
   } catch (error) {
     console.error("Audit route error:", error);
-    return NextResponse.json(
-      { success: false, error: "Audit failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Audit failed" }, { status: 500 });
   }
 }

@@ -1,30 +1,66 @@
 import { supabase } from "@/lib/supabase";
-
+import { Metadata } from "next";
 import LeadCapture from "@/src/components/UI/LeadCapture";
 import AuditResults from "@/src/components/UI/AuditResults";
 import Navbar from "@/src/components/UI/Navbar";
 
 async function getAudit(id: string) {
-  console.log("========== GET AUDIT ==========");
-  console.log("Incoming ID:", id);
-
   const { data, error } = await supabase
     .from("audits")
     .select("*")
     .eq("id", id)
     .single();
 
-  console.log("Supabase data:", data);
-  console.log("Supabase error:", error);
-
   if (error) {
-    console.log("RETURNING NULL");
+    console.error("Failed to fetch audit data:", error);
     return null;
   }
 
-  console.log("RETURNING DATA");
-
   return data;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const audit = await getAudit(resolvedParams.id);
+
+  if (!audit) {
+    return {
+      title: "Audit Not Found | AI Spend Audit",
+    };
+  }
+
+  const monthly = audit.total_monthly_savings ?? 0;
+  const annual = audit.total_annual_savings ?? 0;
+  const title =
+    monthly > 0
+      ? `I could save $${monthly}/mo on AI tools — AI Spend Audit`
+      : "My AI stack is already optimized — AI Spend Audit";
+  const description =
+    monthly > 0
+      ? `This free audit found $${monthly}/month ($${annual}/year) in potential savings across my AI tool stack. Run your own audit free.`
+      : "This free audit checked my entire AI tool stack and found I'm spending optimally. Run your own in 60 seconds.";
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/results/${resolvedParams.id}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "AI Spend Audit",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function ResultsPage({
@@ -32,14 +68,8 @@ export default async function ResultsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // IMPORTANT
   const resolvedParams = await params;
-
-  // ONLY use resolvedParams
   const id = resolvedParams.id;
-
-  console.log("Resolved ID:", id);
-
   const audit = await getAudit(id);
 
   return (
@@ -57,18 +87,9 @@ export default async function ResultsPage({
         {!audit ? (
           <div
             className="flex flex-col items-center justify-center min-h-[60vh] gap-4"
-            style={{
-              color: "rgba(203,196,210,0.5)",
-            }}
+            style={{ color: "rgba(203,196,210,0.5)" }}
           >
-            <p
-              style={{
-                fontSize: 22,
-                color: "#fff",
-              }}
-            >
-              Audit not found
-            </p>
+            <p style={{ fontSize: 22, color: "#fff" }}>Audit not found</p>
           </div>
         ) : (
           <>
