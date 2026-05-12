@@ -1,6 +1,7 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import { resend } from "@/lib/resend";
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 const LEAD_RATE_MAP = new Map<string, number>();
 
