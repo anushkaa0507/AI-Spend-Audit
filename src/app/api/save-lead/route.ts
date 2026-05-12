@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { resend } from "@/lib/resend";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase.from("leads").insert([
+    const { error } = await supabaseServer.from("leads").insert([
       { audit_id: auditId, email, company, role, team_size: teamSize },
     ]);
 

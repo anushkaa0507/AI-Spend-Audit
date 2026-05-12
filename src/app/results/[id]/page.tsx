@@ -1,11 +1,11 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { Metadata } from "next";
 import LeadCapture from "@/src/components/UI/LeadCapture";
 import AuditResults from "@/src/components/UI/AuditResults";
 import Navbar from "@/src/components/UI/Navbar";
 
 async function getAudit(id: string) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("audits")
     .select("*")
     .eq("id", id)

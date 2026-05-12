@@ -1,6 +1,6 @@
 import { runAudit } from "@/lib/audit-engine";
 import { generateSummary } from "@/lib/ai";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { v4 as uuid } from "uuid";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const summary = await generateSummary(audit);
     const id = uuid();
 
-    const { error } = await supabase.from("audits").insert({
+    const { error } = await supabaseServer.from("audits").insert({
       id,
       tools: body.tools,
       team_size: body.teamSize,
