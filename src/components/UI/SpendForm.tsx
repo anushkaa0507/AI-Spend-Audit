@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Spinner from "@/src/components/UI/Spinner";
 import Toast from "@/src/components/UI/Toast";
@@ -12,37 +12,80 @@ interface Tool {
   seats: number;
 }
 
-const TOOL_OPTIONS = ["ChatGPT", "Claude", "GitHub Copilot", "Midjourney", "Anthropic API", "Gemini", "Perplexity"];
-const PLAN_OPTIONS = ["Team", "Plus", "Enterprise", "Pro", "Business", "Individual"];
+const TOOL_PLANS: Record<string, string[]> = {
+  "ChatGPT": ["Free", "Plus", "Team", "Enterprise", "API Direct"],
+  "Claude": ["Free", "Pro", "Max", "Team", "Enterprise", "API Direct"],
+  "GitHub Copilot": ["Individual", "Business", "Enterprise"],
+  "Cursor": ["Hobby", "Pro", "Business", "Enterprise"],
+  "Anthropic API": ["API Direct"],
+  "OpenAI API": ["API Direct"],
+  "Gemini": ["Free", "Pro", "Ultra", "API Direct"],
+  "Windsurf": ["Free", "Pro", "Team", "Enterprise"],
+};
+
+const TOOL_NAMES = Object.keys(TOOL_PLANS);
+
 const USE_CASES = [
-  { value: "coding",   label: "Software Development & Engineering" },
-  { value: "support",  label: "Customer Support Automation" },
-  { value: "content",  label: "Content & Marketing Ops" },
-  { value: "data",     label: "Internal Data Analysis" },
+  { value: "coding", label: "Software Development & Engineering" },
+  { value: "writing", label: "Content & Marketing Ops" },
+  { value: "data", label: "Data Analysis & BI" },
+  { value: "research", label: "Research & Knowledge Work" },
+  { value: "mixed", label: "Mixed / General Use" },
 ];
+
+const STORAGE_KEY = "ai-spend-audit-form";
+
+const DEFAULT_FORM = {
+  teamSize: 5,
+  primaryUseCase: "coding",
+  tools: [{ name: "ChatGPT", plan: "Team", monthlySpend: 150, seats: 5 }] as Tool[],
+};
 
 export default function SpendForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [formData, setFormData] = useState(DEFAULT_FORM);
+  const [hp, setHp] = useState("");
 
-  const [formData, setFormData] = useState({
-    teamSize: 2,
-    primaryUseCase: "coding",
-    tools: [{ name: "ChatGPT", plan: "Team", monthlySpend: 60, seats: 2 }] as Tool[],
-  });
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.tools && Array.isArray(parsed.tools)) {
+          setFormData(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    } catch {}
+  }, [formData]);
 
   const updateTool = (index: number, field: keyof Tool, value: string | number) => {
-    const updated = formData.tools.map((t, i) =>
-      i === index ? { ...t, [field]: value } : t
-    );
+    const updated = formData.tools.map((t, i) => {
+      if (i !== index) return t;
+      if (field === "name") {
+        const plans = TOOL_PLANS[value as string] ?? ["Pro"];
+        return { ...t, name: value as string, plan: plans[0] };
+      }
+      return { ...t, [field]: value };
+    });
     setFormData({ ...formData, tools: updated });
   };
 
   const addTool = () => {
+    const firstName = TOOL_NAMES[0];
     setFormData({
       ...formData,
-      tools: [...formData.tools, { name: "ChatGPT", plan: "Team", monthlySpend: 0, seats: 1 }],
+      tools: [
+        ...formData.tools,
+        { name: firstName, plan: TOOL_PLANS[firstName][0], monthlySpend: 0, seats: 1 },
+      ],
     });
   };
 
@@ -52,21 +95,21 @@ export default function SpendForm() {
   };
 
   async function runAudit() {
+    if (hp !== "") return;
     try {
       setLoading(true);
       const response = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, __hp: hp }),
       });
       const data = await response.json();
       if (data.success) {
         router.push(`/results/${data.id}`);
       } else {
-        setToast({ message: "Audit failed. Please try again.", type: "error" });
+        setToast({ message: data.error ?? "Audit failed. Please try again.", type: "error" });
       }
-    } catch (error) {
-      console.log(error);
+    } catch {
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     }
     setLoading(false);
@@ -74,11 +117,8 @@ export default function SpendForm() {
 
   return (
     <>
-     
-
       <section id="audit" className="py-24 px-6 md:px-12" style={{ background: "linear-gradient(to bottom, #09090f, #0d0b18)" }}>
         <div className="max-w-3xl mx-auto">
-          {/* Section header */}
           <div className="text-center mb-12 form-section">
             <div
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
@@ -97,7 +137,6 @@ export default function SpendForm() {
             </p>
           </div>
 
-          {/* Card */}
           <div
             className="form-section relative overflow-hidden"
             style={{
@@ -110,14 +149,9 @@ export default function SpendForm() {
               animationDelay: "0.15s",
             }}
           >
-            {/* Corner glow */}
-            <div
-              className="absolute pointer-events-none"
-              style={{ top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(139,92,246,0.12)", filter: "blur(60px)" }}
-            />
+            <div className="absolute pointer-events-none" style={{ top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(139,92,246,0.12)", filter: "blur(60px)" }} />
 
             <div className="relative z-10 flex flex-col gap-6">
-              {/* Team Size + Use Case */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="form-label">Team Size</label>
@@ -144,24 +178,17 @@ export default function SpendForm() {
                 </div>
               </div>
 
-              {/* Tools */}
               <div className="flex flex-col gap-4">
                 <label className="form-label" style={{ marginBottom: 0 }}>Tools to Audit</label>
                 {formData.tools.map((tool, idx) => (
-                  <div key={idx} className="tool-card">
+                  <div key={idx} className="tool-card" style={{ position: "relative" }}>
                     {formData.tools.length > 1 && (
                       <button
                         onClick={() => removeTool(idx)}
                         className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg transition-all"
                         style={{ color: "rgba(203,196,210,0.4)", background: "rgba(255,255,255,0.05)", fontSize: 16, lineHeight: 1 }}
-                        onMouseEnter={(e) => {
-                          (e.target as HTMLElement).style.color = "#f87171";
-                          (e.target as HTMLElement).style.background = "rgba(248,113,113,0.1)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.target as HTMLElement).style.color = "rgba(203,196,210,0.4)";
-                          (e.target as HTMLElement).style.background = "rgba(255,255,255,0.05)";
-                        }}
+                        onMouseEnter={(e) => { (e.currentTarget).style.color = "#f87171"; (e.currentTarget).style.background = "rgba(248,113,113,0.1)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget).style.color = "rgba(203,196,210,0.4)"; (e.currentTarget).style.background = "rgba(255,255,255,0.05)"; }}
                       >
                         ×
                       </button>
@@ -174,7 +201,7 @@ export default function SpendForm() {
                           value={tool.name}
                           onChange={(e) => updateTool(idx, "name", e.target.value)}
                         >
-                          {TOOL_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+                          {TOOL_NAMES.map((o) => <option key={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
@@ -184,11 +211,11 @@ export default function SpendForm() {
                           value={tool.plan}
                           onChange={(e) => updateTool(idx, "plan", e.target.value)}
                         >
-                          {PLAN_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+                          {(TOOL_PLANS[tool.name] ?? ["Pro"]).map((o) => <option key={o}>{o}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="form-label">Monthly Spend</label>
+                        <label className="form-label">Monthly Spend ($)</label>
                         <div className="relative">
                           <span className="input-prefix">$</span>
                           <input
@@ -203,7 +230,7 @@ export default function SpendForm() {
                         </div>
                       </div>
                       <div>
-                        <label className="form-label">Seats</label>
+                        <label className="form-label">Seats / Users</label>
                         <input
                           type="number"
                           min={1}
@@ -217,7 +244,6 @@ export default function SpendForm() {
                   </div>
                 ))}
 
-                {/* Add tool */}
                 <button onClick={addTool} className="btn-add">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -226,7 +252,17 @@ export default function SpendForm() {
                 </button>
               </div>
 
-              {/* Submit */}
+              <input
+                type="text"
+                name="__hp"
+                value={hp}
+                onChange={(e) => setHp(e.target.value)}
+                style={{ display: "none" }}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+              />
+
               <button onClick={runAudit} disabled={loading} className="btn-submit mt-2">
                 {loading ? (
                   <>
@@ -244,7 +280,7 @@ export default function SpendForm() {
               </button>
 
               <p className="text-center" style={{ color: "rgba(203,196,210,0.35)", fontSize: 12 }}>
-                No credit card required · Free for up to 5 tools
+                No credit card required · Free for up to 8 tools · Form auto-saved
               </p>
             </div>
           </div>
@@ -252,11 +288,7 @@ export default function SpendForm() {
       </section>
 
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
     </>
   );

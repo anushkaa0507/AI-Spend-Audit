@@ -1,45 +1,42 @@
 import { supabase } from "@/lib/supabase";
+import { NextResponse } from "next/server";
 
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: { id: string } }
 ) {
-
   try {
+    console.log("API PARAMS:", params);
 
-    const { id } = await params;
+    const { data, error } = await supabase
+      .from("audits")
+      .select("*")
+      .eq("id", params.id)
+      .single();
 
-    const { data, error } =
-      await supabase
-
-        .from("audits")
-
-        .select("*")
-
-        .eq("id", id)
-
-        .single();
+    console.log("API DATA:", data);
+    console.log("API ERROR:", error);
 
     if (error) {
-
-      return Response.json({
-        success: false,
-        error,
-      });
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 404 }
+      );
     }
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       data,
     });
-
   } catch (error) {
+    console.error("Results fetch error:", error);
 
-    console.log(error);
-
-    return Response.json({
-      success: false,
-      error,
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Fetch failed",
+      },
+      { status: 500 }
+    );
   }
 }

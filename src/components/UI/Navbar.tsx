@@ -265,7 +265,7 @@ export default function Navbar() {
                   <circle cx="7" cy="7" r="1.8" fill="white" />
                 </svg>
               </div>
-              <span className="logo-text">StackAudit</span>
+              <span className="logo-text">Credex</span>
             </a>
           </div>
 

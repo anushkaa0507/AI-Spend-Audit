@@ -12,8 +12,8 @@ export default function LeadCapture({ auditId }: { auditId: string }) {
   async function saveLead() {
     try {
       setLoading(true);
-      const response = await fetch("/api/save-lead", {
-        method: "POST",
+const response = await fetch("/api/leads", {
+          method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ auditId, ...formData }),
       });

@@ -266,7 +266,7 @@ export default function Hero() {
                 <div className="demo-dot" style={{ background: "#ff5f56" }} />
                 <div className="demo-dot" style={{ background: "#ffbd2e" }} />
                 <div className="demo-dot" style={{ background: "#27c93f" }} />
-                <span className="demo-title-text">StackAudit — Live Demo</span>
+                <span className="demo-title-text">Credex — Live Demo</span>
                 {/* Play/Pause */}
                 <button
                   onClick={() => setPlaying(!playing)}
